@@ -1,0 +1,242 @@
+---
+knit: (function(f, ...) { source(file.path(dirname(f), "formato_informe.R")); generar_pdf(solo = basename(f)) })
+---
+
+<!-- Parte 2: validación y regularización. Resultados: 04_validation/output/results_part_2.rds -->
+
+```{r setup-p2, include = FALSE}
+source("formato_informe.R")
+p2 <- resultados(2)
+```
+
+# 2. Validación y regularización
+
+```{r}
+estado(p2)
+```
+
+## (a) Validación cruzada con cinco pliegues aleatorios
+
+```{r}
+mostrar(p2, "cv_aleatoria")
+```
+
+::: {.respuesta data-latex=""}
+La Tabla \ref{tab:p2-cv_aleatoria} presenta el RMSE de los modelos $M_1$ y $M_2$ con validación cruzada de cinco pliegues aleatorios. Cada pliegue se valida con el modelo ajustado en los otros cuatro, de modo que todas las viviendas de entrenamiento se usan una vez para evaluar.
+
+**Resultados:**
+
+   - **Modelo con Área ($M_1$)**: El RMSE promedio entre pliegues es de 238,8 millones de COP, con una desviación estándar de 7,0 millones.
+
+   - **Modelo completo ($M_2$)**: Al sumar los baños, el tipo de inmueble y la ubicación, el RMSE promedio baja a 215,0 millones de COP (desviación estándar de 8,3), es decir, cerca de un 10% menos de error que $M_1$.
+
+   - **Consistencia de la mejora**: $M_2$ gana en los cinco pliegues, y la diferencia entre ambos modelos varía poco de un pliegue a otro (entre 20,1 y 25,4 millones, con una desviación estándar de 2,1). Por tal razón, la ventaja de $M_2$ no depende de cómo se repartieron los avisos al azar.
+
+Ahora bien, la desviación estándar de cada modelo muestra que, solo por el azar de la partición, el error de un mismo modelo puede variar entre 7 y 8 millones. Como ambos modelos se evalúan en los mismos pliegues, cuando un pliegue es más difícil de predecir el error sube en los dos; aun así, $M_2$ supera a $M_1$ en todos los pliegues.
+
+**Comparación con la Parte 1:** La validación 80/20 dio un RMSE de 234,1 millones para $M_1$ y 212,4 millones para $M_2$. Ambos valores quedan dentro del rango de los pliegues y a menos de una desviación estándar del promedio, aunque son algo más bajos, lo que sugiere que esa partición resultó levemente favorable. En términos simples, las dos validaciones llegan a la misma conclusión, pero la validación cruzada es más confiable: usa todos los avisos para evaluar, entrega cinco mediciones en lugar de una y permite medir cuánto depende el error de la muestra de validación.
+:::
+
+## (b) Pliegues espaciales
+
+```{r}
+mostrar(p2, "mapa_pliegues")
+```
+
+::: {.respuesta data-latex=""}
+La Figura \ref{fig:p2-mapa_pliegues} compara los dos esquemas de validación:
+
+   - **Pliegues aleatorios (Panel A)**: Los avisos se reparten al azar entre los cinco pliegues, por lo que viviendas vecinas quedan mezcladas en pliegues distintos. Este esquema responde a la pregunta: ¿qué tan bien predice el modelo una vivienda nueva en zonas que ya conoce?
+
+   - **Pliegues espaciales (Panel B)**: La ciudad se divide en celdas de 0,02 grados (cerca de 2,2 km de lado) y cada celda entera va a un solo pliegue, de modo que las viviendas vecinas nunca se separan entre entrenamiento y validación. Este esquema responde a la pregunta: ¿qué tan bien predice el modelo en una zona de la ciudad de la que no vio ningún aviso?
+:::
+
+
+```{r}
+mostrar(p2, "pliegues")
+```
+
+
+::: {.respuesta data-latex=""}
+La Tabla \ref{tab:p2-pliegues} muestra que los pliegues aleatorios quedan del mismo tamaño (entre 3.055 y 3.056 avisos), mientras que los espaciales quedan desbalanceados (entre 1.756 y 4.576 avisos), aunque cada uno recibe 13 o 14 de las 68 celdas. Esto ocurre porque unas celdas concentran muchos más avisos que otras.
+:::
+
+
+```{r}
+mostrar(p2, "rmse_cada_pliegue")
+```
+
+::: {.respuesta data-latex=""}
+La Tabla \ref{tab:p2-rmse_cada_pliegue} presenta el error de cada pliegue en los dos esquemas. De ella destacan dos aspectos clave:
+
+   - **Error por pliegue**: Con pliegues aleatorios, el RMSE de $M_2$ se mueve en un rango estrecho (de 203,4 a 225,8 millones de COP). Con pliegues espaciales, en cambio, va de 160,3 millones en el pliegue 2 a 298,7 millones en el pliegue 5. El mismo patrón se observa en $M_1$ (de 228,1 a 245,9 frente a 173,7 a 325,1 millones).
+
+   - **Comparación de modelos**: $M_2$ tiene menor error que $M_1$ en los cinco pliegues de ambos esquemas. Sin embargo, con pliegues aleatorios la diferencia es estable (entre 20,1 y 25,4 millones), mientras que con pliegues espaciales varía más (entre 13,4 y 26,4 millones), lo que muestra que la ventaja de $M_2$ depende de la zona que se predice.
+:::
+
+
+```{r}
+mostrar(p2, "esquemas")
+```
+
+::: {.respuesta data-latex=""}
+La Tabla \ref{tab:p2-esquemas} resume los dos esquemas. Con pliegues espaciales, el RMSE promedio sube levemente: de 238,8 a 244,2 millones de COP en $M_1$ y de 215,0 a 222,7 millones en $M_2$. Sin embargo, la desviación estándar se multiplica: pasa de 7,0 a 62,5 millones en $M_1$ y de 8,3 a 58,3 millones en $M_2$. En términos simples, cuando el modelo debe predecir zonas que no vio, su precisión depende mucho de qué parte de la ciudad le toque.
+
+**Esquema elegido:** En el resto del proyecto usaremos los pliegues espaciales. La Figura \ref{fig:p1-mapas_error} de la Parte 1 muestra que los errores del modelo se agrupan por zonas. Por tal razón, la validación aleatoria da una imagen demasiado estable del error, mientras que la espacial mide el desempeño en zonas nuevas y deja ver cuánto puede variar el error según la zona de la ciudad.
+:::
+
+## (c) Elección de la especificación
+
+```{r}
+mostrar(p2, "especificaciones_pliegues")
+```
+
+::: {.respuesta data-latex=""}
+La Tabla \ref{tab:p2-especificaciones_pliegues} presenta el RMSE de las cuatro especificaciones en cada pliegue espacial. Las especificaciones son:
+
+   - **E1** ($M_2$): área, baños, tipo de inmueble y coordenadas.
+
+   - **E2** (interacciones): permite que el metro cuadrado y el baño adicional valgan distinto en una casa que en un apartamento.
+
+   - **E3** (polinomios y logaritmos): logaritmo del área y su cuadrado, baños y su cuadrado, y un polinomio de grado 3 en las coordenadas para capturar la forma de los precios en el mapa.
+
+   - **E4** (rica): combina E2 y E3 y agrega habitaciones, estrato, año y distancias.
+
+De la tabla destacan dos aspectos clave:
+
+   - **E4 gana en todos los pliegues**: tiene el menor error en los cinco, desde 143,1 millones de COP en el pliegue 2 hasta 248,7 millones en el pliegue 5.
+
+   - **Las demás no mejoran siempre**: E3 supera a E1 en los cinco pliegues, pero E2 no: en el pliegue 4 su error (189,7 millones) es mayor que el de E1 (181,5 millones). Además, los pliegues 1 y 5 son los más difíciles para todas las especificaciones, lo que confirma que la dificultad depende de la zona que se predice.
+:::
+
+
+
+```{r}
+mostrar(p2, "especificaciones")
+```
+
+::: {.respuesta data-latex=""}
+La Tabla \ref{tab:p2-especificaciones} resume el desempeño de cada especificación con las predicciones fuera de pliegue:
+
+   - **Error de validación**: El RMSE baja de 219,29 millones de COP con E1 a 212,38 con E2, 204,31 con E3 y 185,44 con E4. Es decir, E4 reduce el error en cerca de un 15% frente a E1. El MAE sigue el mismo orden (de 133,20 a 109,28 millones) y el $R^2$ sube de 0,58 a 0,70.
+
+   - **Estabilidad entre pliegues**: E4 también tiene la menor desviación estándar entre pliegues (43,90 millones, frente a 58,27 de E1), por lo que además de equivocarse menos, su error depende menos de la zona.
+
+   - **Complejidad**: E4 usa 45 coeficientes frente a 6 de E1. Aun así, como el error se mide en zonas que el modelo no vio, la mejora no es un efecto de sobreajuste: el modelo más rico predice mejor fuera de muestra.
+
+**Especificación elegida:** E4, la de menor RMSE de validación. Su matriz es la que se amplía en el inciso (d).
+
+**¿Por qué preprocesar antes de partir filtra información?** Si una transformación que se aprende de los datos (por ejemplo, la mediana para imputar habitaciones) se calcula con toda la muestra, usa también los avisos de validación. Así, el modelo «ve» indirectamente datos que debería desconocer, y el error de validación sale más optimista de lo real. Por eso la mediana se calcula dentro de cada pliegue (nota de la Tabla \ref{tab:p2-especificaciones}).
+:::
+
+## (d) Ridge, Lasso y Elastic Net
+
+```{r}
+mostrar(p2, "matriz")
+```
+
+::: {.respuesta data-latex=""}
+La Tabla \ref{tab:p2-matriz} presenta la matriz ampliada con la que se estiman Ridge, Lasso y Elastic Net. Es la misma de la especificación E4: 44 columnas (p) repartidas en siete bloques, de los cuales los más grandes son las interacciones con el tipo de inmueble (12 columnas) y las distancias en logaritmo (11 columnas), frente a 15.277 avisos de entrenamiento (n).
+
+En términos simples, hay cerca de 347 avisos por cada columna. Con tantos datos por variable, la regresión sin penalizar ya estima los coeficientes con poca varianza, de modo que la penalización tiene poco margen para mejorar la predicción.
+:::
+
+```{r}
+mostrar(p2, "camino_cv")
+```
+
+::: {.respuesta data-latex=""}
+La Figura \ref{fig:p2-camino_cv} muestra el RMSE de validación de Ridge, Lasso y el mejor Elastic Net ($\alpha = 0{,}5$) a medida que aumenta la penalización ($\lambda$). De ella destacan tres aspectos clave:
+
+   - **Forma de la curva**: Con $\lambda$ pequeño el error es plano y mínimo; a medida que $\lambda$ crece, el modelo encoge sus coeficientes hacia cero y el error sube hasta cerca de 340 millones de COP, que es el error de predecir con la media ($M_0$: 342,86 millones en la Tabla \ref{tab:p2-todos}).
+
+   - **$\lambda$ mín (línea roja)**: En los tres paneles queda en el extremo izquierdo, es decir, en el menor $\lambda$ de la grilla. El mejor modelo es el que casi no penaliza.
+
+   - **$\lambda$ 1se (línea naranja)**: Queda más a la derecha, donde la curva empieza a subir. La banda de un error estándar es ancha porque, con pliegues espaciales, el error cambia mucho de una zona a otra; por eso la regla de un error estándar permite una penalización alta.
+:::
+
+```{r}
+mostrar(p2, "regularizacion_pliegues")
+```
+
+::: {.respuesta data-latex=""}
+La Tabla \ref{tab:p2-regularizacion_pliegues} compara, pliegue por pliegue, la especificación E4 sin penalizar con los modelos penalizados:
+
+   - **Con $\lambda$ mín**: Ridge, Lasso y Elastic Net quedan prácticamente iguales a E4 sin penalizar en los cinco pliegues, con diferencias de máximo 4,3 millones de COP (pliegue 4). Solo en el pliegue 5, Ridge (248,4) y Elastic Net (248,1) quedan levemente por debajo de E4 (248,7).
+
+   - **Lasso con $\lambda$ 1se**: Tiene más error que E4 en todos los pliegues, y la diferencia es mayor en los pliegues más difíciles: 256,6 frente a 217,9 millones en el pliegue 1 y 281,9 frente a 248,7 millones en el pliegue 5.
+:::
+
+```{r}
+mostrar(p2, "regularizacion")
+```
+
+::: {.respuesta data-latex=""}
+La Tabla \ref{tab:p2-regularizacion} resume el $\lambda$ que elige la validación para cada método:
+
+   - **$\lambda$ mín**: Los cinco métodos llegan a un RMSE de entre 185,98 millones (Elastic Net con $\alpha = 0{,}5$) y 187,31 millones (Lasso), y conservan casi todas las columnas (44, o 42 en el Lasso). Ninguno mejora a E4 sin penalizar, que tiene un RMSE de 185,44 millones (Tabla \ref{tab:p2-especificaciones}). Como indica la nota de la tabla, en todos los métodos $\lambda$ mín es el menor $\lambda$ de la grilla: con 15.277 avisos y 44 columnas no hay varianza que reducir, y la penalización solo agrega sesgo.
+
+   - **$\lambda$ 1se**: El RMSE sube a entre 204,07 y 205,78 millones, unos 18 millones más que con $\lambda$ mín, pero los modelos se simplifican: el Lasso pasa a 10 columnas y el Elastic Net con $\alpha = 0{,}5$ a 13. Ridge conserva las 44, porque encoge los coeficientes sin llevarlos a cero.
+
+**Modelo penalizado elegido:** El Elastic Net con $\alpha = 0{,}5$ en su $\lambda$ mín es el mejor de los penalizados (185,98 millones), aunque su desempeño es prácticamente igual al de E4 sin penalizar. Por tal razón, en este problema la regularización no mejora la predicción; su utilidad aparece cuando el número de columnas es grande frente al número de avisos.
+:::
+
+## (e) k-NN en el mapa y variables que conserva el Lasso
+
+```{r}
+mostrar(p2, "knn")
+```
+
+::: {.respuesta data-latex=""}
+La Figura \ref{fig:p2-knn} muestra el RMSE de validación del k-NN, que predice el precio de cada vivienda con el promedio de las $k$ viviendas más cercanas en el mapa (solo longitud y latitud). El error baja con fuerza de $k = 1$ (399,6 millones de COP) a $k = 10$ (297,5 millones) y luego se aplana hasta $k = 100$ (283,3 millones), el valor elegido (punto rojo).
+
+En términos simples, con un solo vecino el modelo copia el precio de una vivienda cercana y arrastra todo su ruido: su error es incluso mayor que el de predecir con la media ($M_0$: 342,86 millones en la Tabla \ref{tab:p2-todos}). Al promediar más vecinos, el ruido se compensa y el error baja. Cabe anotar que $k = 100$ es el mayor valor de la grilla evaluada y la curva todavía baja levemente (de 286,1 con $k = 50$ a 283,3).
+:::
+
+```{r}
+mostrar(p2, "knn_pliegues")
+```
+
+::: {.respuesta data-latex=""}
+La Tabla \ref{tab:p2-knn_pliegues} muestra que $k = 100$ tiene el menor error en los cinco pliegues, por lo que la elección no depende de una zona en particular. Sin embargo, el error con $k = 100$ cambia mucho según la zona: va de 216,0 millones de COP en el pliegue 2 a 362,3 millones en el pliegue 5. Como en los incisos anteriores, los pliegues 1 y 5 son los más difíciles de predecir.
+:::
+
+```{r}
+mostrar(p2, "tabla_knn")
+```
+
+::: {.respuesta data-latex=""}
+La Tabla \ref{tab:p2-tabla_knn} resume el RMSE de validación de cada $k$ con todos los avisos: 399,6 millones con $k = 1$, 321,6 con $k = 5$, 297,5 con $k = 10$, 289,6 con $k = 25$, 286,1 con $k = 50$ y 283,3 con $k = 100$. La mayor parte de la mejora ocurre al pasar de 1 a 10 vecinos.
+:::
+
+```{r}
+mostrar(p2, "todos")
+```
+
+::: {.respuesta data-latex=""}
+La Tabla \ref{tab:p2-todos} reúne todos los modelos con la misma validación (pliegues espaciales):
+
+   - **Mejor modelo**: E4 sin penalizar tiene el menor RMSE (185,44 millones de COP) y explica el 70% de la variabilidad del precio ($R^2$ de 0,70). Muy cerca quedan el Elastic Net con $\alpha = 0{,}5$ (185,98), Ridge (186,79) y Lasso (187,31), todos en su $\lambda$ mín.
+
+   - **Lasso con $\lambda$ 1se**: Con solo 10 columnas llega a un RMSE de 205,78 millones, similar al de E3 (204,31 millones con 13 coeficientes).
+
+   - **k-NN en el mapa**: Con un RMSE de 283,26 millones y un $R^2$ de 0,30, es claramente peor que los modelos lineales: la ubicación por sí sola explica cerca de un tercio de la variabilidad del precio, pero no reemplaza las características de la vivienda (área, baños, estrato). Además, con pliegues espaciales los vecinos más cercanos de una vivienda validada están siempre en otras celdas, lo que limita lo que el k-NN puede aprender del mapa.
+
+   - **Referencia**: Todos los modelos le ganan a la media ($M_0$: 342,86 millones), y E4 reduce su error en cerca de un 46%.
+:::
+
+```{r}
+mostrar(p2, "lasso_1se")
+```
+
+::: {.respuesta data-latex=""}
+La Tabla \ref{tab:p2-lasso_1se} muestra las 10 columnas, de 44, que conserva el Lasso con $\lambda$ 1se: el área, log(área)$^2$, los baños, las habitaciones, el estrato 6, la longitud, la latitud al cuadrado, la distancia al Ecoparque, y las interacciones de las habitaciones y del estrato 6 con el tipo Casa.
+
+Como puntos claves tenemos:
+
+   - El estrato 6 es la variable con mayor peso: un aviso en estrato 6 se asocia con 150,95 millones de COP más que uno de estrato 1, y 62,62 millones adicionales si es una casa.
+
+   - Las habitaciones tienen signo negativo ($-2{,}37$ millones), lo que no significa que una habitación más baje el precio: manteniendo fijos el área y los baños, más habitaciones implican espacios más pequeños.
+
+**¿Por qué esto no dice qué variables causan el precio?** El Lasso elige las variables que mejor predicen, no las que causan el precio: entre variables correlacionadas (estrato, ubicación y distancias) conserva una y descarta las otras casi al azar, y sus coeficientes están encogidos y dependen de qué otras variables quedaron en el modelo.
+:::

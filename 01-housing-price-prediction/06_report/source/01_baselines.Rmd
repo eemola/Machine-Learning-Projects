@@ -1,0 +1,141 @@
+---
+knit: (function(f, ...) { source(file.path(dirname(f), "formato_informe.R")); generar_pdf(solo = basename(f)) })
+---
+
+<!-- Parte 1: la referencia y la regresión lineal. Resultados: 03_baselines/output/results_part_1.rds -->
+
+```{r setup-p1, include = FALSE}
+source("formato_informe.R")
+p1 <- resultados(1)
+```
+
+# 1. La referencia y la regresión lineal
+
+## (a) Carga de datos y análisis exploratorio
+
+```{r}
+mostrar(p1, "descriptivas")
+```
+
+::: {.respuesta data-latex=""}
+La **Tabla 1** presenta la estructura general de la muestra de los avisos de venta de vivienda en Cali. La sumatoria del conjunto de datos es de 19.096 observaciones, las cuales se dividen en un 80% entrenamiento y 20% de muestra.
+
+Ahora bien, como se usarán cuatro quintos de dichos datos para construir el modelo, solo se analizan las medidas de tendencia central y dispersión de este subgrupo.
+
+Como puntos claves tenemos:
+  
+  - Gran brecha entre la media y la mediana; además de notable distancia entre el mínimo y el máximo de los datos. Esto confirma una fuerte asimetría positiva y una elevada heterogeneidad en el mercado inmobiliario de la ciudad (_véase Figura 1, panel B_).
+  
+  - Hay predominancia de apartamentos sobre las casas, lo cual será un atributo determinante del tamaño de la vivienda (el área construida) y, con él, del precio.
+:::
+
+```{r}
+mostrar(p1, "faltantes")
+```
+
+::: {.respuesta data-latex=""}
+La Tabla 2 presenta la proporción de valores faltantes en las variables del conjunto de datos. De este análisis destacan dos aspectos clave:
+
+ - Simetría entre muestras: La proporción de datos faltantes es prácticamente idéntica en el entrenamiento y en la prueba ($\sim 77,0\%$ en barrio y $\sim 40,3\%$ en habitaciones). Esto confirma que la pérdida de información es uniforme y que la partición de los datos se realizó sin sesgos.
+ 
+ - Implicaciones para el modelaje:
+    
+    - Uso de coordenadas (lon y lat): La alta ausencia de etiquetas en barrio ($77,0\%$) hace inviable usar esta variable. Por ello, se utilizan la longitud y la latitud (completas al $100\%$) para capturar el efecto de la ubicación de forma continua.
+ 
+    - Imputación de características físicas: Para no perder el $40,4\%$ de la muestra por la variable habitaciones, se requiere imputar sus vacíos (por ejemplo, con la mediana) calculados estrictamente dentro de cada pliegue para evitar la filtración de datos.
+:::
+
+
+```{r}
+mostrar(p1, "mapa_precios")
+```
+
+::: {.respuesta data-latex=""}
+Anotaciones iniciales de estas imagenes: 
+
+ - **Ubicación de los precios (Panel A):** El mapa refleja una clara división en la ciudad. Las viviendas más caras (los puntos más oscuros) se concentran en el Sur y en el Oeste de Cali, mientras que las de menor precio (los puntos más claros) predominan en el Oriente y en el Norte.
+ 
+ - **Diferencia entre apartamentos y casas (Panel B):** En general, los apartamentos son más económicos que las casas. Su distribución está más hacia los valores bajos, lo que encaja con una oferta de vivienda más económica. Por su parte, las casas alcanzan precios mucho más altos y tienen mayor variación entre sí. Se usa escala logarítmica para hacer una 'Normalizacion' a los precios.
+:::
+
+
+## (b) Modelos base y validación (M0, M1, M2)
+
+```{r}
+mostrar(p1, "metricas")
+```
+
+::: {.respuesta data-latex=""}
+**Nota:** Separamos el 20 % de los datos de entrenamiento para validación interna usando una semilla fija (`12345`). La Tabla \ref{tab:p1-metricas} presenta las métricas de validación de los tres modelos.
+
+
+**Resultados:** 
+
+   -  **Modelo de referencia ($M_0$)**: El asignar el precio promedio a todas las viviendas nos da un RMSE, MAE y R^2 como línea base de error sin utilizar ningún predictor.
+
+   - **Modelo con Área ($M_1$)**: Al incluir un los metros cuadrados al modelo el RMSE se reduce en un 31,3%; el MAE en un 36,77%. Con una sola variable, el modelo logra explicar el 53% de la variabilidad del precio.
+   
+   - **Modelo completo ($M_2$)**: Al sumar los baños, el tipo de inmueble y la ubicación en el mapa, el modelo da un salto importante en precisión: el error promedio baja a 212,4 millones de COP y el error típico absoluto a 130,8 millones. Con esto, el modelo pasa a explicar el 61,2% de las variaciones del precio, logrando reducir el error del promedio inicial en casi un 38%.
+:::
+
+
+## (c) Diagnósticos para el modelo M2
+
+```{r}
+mostrar(p1, "diagnosticos")
+```
+
+::: {.respuesta data-latex=""}
+
+Ahora bien, al graficar los precios predichos vs. los observados, la recta de tendencia ajustada (naranja) tiene una pendiente de 0.63, situándose por debajo de la línea ideal de 45° (véase Panel A).
+
+Lo anterior evidencia un claro sesgo en el modelo $M_2$: sobreestima el valor de los inmuebles económicos y subestima fuertemente las viviendas más costosas. En términos simples, por cada millón adicional en el precio real de una propiedad, el modelo solo incrementa su predicción en 630.000.
+
+Por otra parte, al analizar el Panel B, en las propiedades más económicas (primeros tres quintiles), el error del modelo se mantiene bajo y estable con un RMSE de entre 100 y 123 millones. Sin embargo, a medida que aumenta el valor de la vivienda, las fallas crecen: el error sube a 178 millones en el cuarto quintil y se dispara a 395 millones en el quinto quintil, afectando fuertemente la predicción de las casas más caras. Por tal razón, aunque el modelo $M_2$ predice con precisión aceptable las viviendas económicas y de precio medio, una regresión lineal simple es insuficiente para los inmuebles de lujo. Este enfoque se queda corto para capturar la alta variabilidad y las características únicas de las propiedades de mayor valor.
+
+:::
+
+
+```{r}
+mostrar(p1, "quintiles")
+```
+
+::: {.respuesta data-latex=""}
+
+Al analizar los resultados por rangos de precio, queda claro que el Modelo 2 sufre una fuerte compresión hacia la media: tiende a inflar el valor de las viviendas más baratas y a recortar el de las más caras. En el primer quintil (Q1), el modelo predice en promedio 179,8 millones de COP cuando el valor real es de 129,3 millones (sobreestimación). En el otro extremo (Q5), se queda corto por casi 177 millones en las propiedades de alta gama.
+
+Aunque el error absoluto en dinero se dispara en las casas más costosas (alcanzando un RMSE de 394,9 millones), el golpe proporcional es mucho peor en las viviendas económicas, donde el error llega a representar un 77,7% del valor del inmueble. Esto deja en evidencia que una regresión lineal simple no logra responder bien en los extremos del mercado.
+
+:::
+
+```{r}
+mostrar(p1, "mapas_error")
+```
+
+::: {.respuesta data-latex=""}
+
+La **Figura 3** muestra que los errores del modelo no ocurren al azar, sino que se agrupan por zonas: si el modelo se queda corto con el precio de una casa en el Sur, probablemente también se quedará corto con sus casas vecinas.
+
+Si usáramos una validación cruzada aleatoria tradicional, el resultado sería engañosamente optimista, porque el modelo estaría evaluándose con casas justo al lado de las que usó para entrenar.
+
+:::
+
+
+
+## (d) Cuánto reduce el error cada modelo
+
+```{r}
+mostrar(p1, "reduccion")
+```
+
+::: {.respuesta data-latex=""}
+
+- $M_1$ (área construida) reduce el RMSE un 31,3% frente a la media ($M_0$), bajándolo de 340,9 a 234,1 millones de COP.
+
+- $M_2$ (área, baños, tipo y coordenadas) logra una reducción acumulada del 37,7% frente a $M_0$, situando el RMSE en 212,4 millones.
+
+- La mejora marginal entre $M_1$ y $M_2$ es de apenas el 9,3%, evidenciando retornos decrecientes.Esto sugiere un techo predictivo cercano al 61% de la variabilidad ($R^2$) con la información estructurada del problema inicial.
+
+- El error de **\~212 millones** que queda sin explicar demuestra que detalles invisibles en un anuncio (como los acabados, el estado de la casa o el regateo) le ponen un freno a la precisión.
+
+:::

@@ -1,0 +1,48 @@
+---
+lang: es
+fontsize: 11pt
+papersize: letter
+geometry: "margin=2.5cm"
+linestretch: 1.1
+colorlinks: true
+linkcolor: azul
+urlcolor: azul
+params:
+  solo: ""
+output:
+  pdf_document:
+    latex_engine: pdflatex
+    fig_crop: false
+    includes:
+      in_header: formato_informe.tex
+knit: (function(f, ...) { source(file.path(dirname(f), "formato_informe.R")); generar_pdf() })
+---
+
+<!--
+INFORME: une las secciones en un solo PDF (06_report/output/informe_general.pdf).
+No hace falta editarlo: el texto de cada seccion esta en 01_baselines.Rmd ... 04_closing.Rmd.
+Se genera con 00_run.R o con el boton Knit de este archivo.
+-->
+
+```{r setup-informe, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE,
+                      fig.align = "center", fig.pos = "H", out.width = "100%",
+                      fig.width = 6.5, fig.height = 3.4, dev = if (capabilities("cairo")) "cairo_pdf" else "pdf")
+source("formato_informe.R")
+
+## las secciones, en orden (el boton Knit de una seccion arma solo esa)
+secciones <- c("01_baselines.Rmd", "02_validation.Rmd", "03_final_model.Rmd", "04_closing.Rmd")
+if (params$solo != "") secciones <- params$solo
+```
+
+```{r primera-linea}
+primera_linea()
+```
+
+```{r titulo}
+titulo()
+```
+
+```{r secciones}
+asis_output(paste(sapply(secciones, incluir), collapse = "\n\n"))
+```

@@ -1,0 +1,73 @@
+---
+knit: (function(f, ...) { source(file.path(dirname(f), "formato_informe.R")); generar_pdf(solo = basename(f)) })
+---
+
+<!-- Parte 1: clasificación de VIS, ROC y umbral por costos. Resultados: 03_classification/output/results_part_1.rds -->
+
+```{r setup-p1, include = FALSE}
+source("formato_informe.R")
+p1 <- resultados(1)
+```
+
+# 1. Clasificación: ¿es vivienda de interés social?
+
+```{r}
+estado(p1)
+```
+
+## (a) Prevalencia de VIS y clasificador trivial
+
+```{r}
+mostrar(p1, "referencia")
+```
+
+::: {.respuesta data-latex=""}
+**Prevalencia y Accuracy Trivial:**
+La prevalencia de viviendas de interés social (VIS) en la muestra de entrenamiento es de apenas `r fmt(p1$prevalencia$prevalencia*100, 2)` %. Por lo tanto, un clasificador trivial que etiquete todos los avisos como "No VIS" lograría un accuracy del `r fmt(p1$prevalencia$accuracy_trivial*100, 2)` %. Sin embargo, esta métrica es completamente engañosa en contextos de clases desbalanceadas: aunque el modelo acierta casi siempre, tiene un Recall del 0 %, fracasando por completo en el objetivo real del problema, que es identificar las viviendas VIS.
+:::
+
+## (b) Regresión logística: ROC, AUC y matriz de confusión
+
+```{r}
+mostrar(p1, "roc")
+```
+
+::: {.respuesta data-latex=""}
+**Curva ROC y AUC:**
+La Figura \ref{fig:p1-roc} muestra que la curva ROC de la logística queda muy por encima de la diagonal, que representa clasificar al azar. El AUC es de `r fmt(p1$auc_logit, 3)`: si tomamos al azar una vivienda VIS y una no VIS, el modelo le asigna mayor probabilidad a la VIS en el `r fmt(p1$auc_logit*100, 1)` % de los casos. Es decir, el modelo ordena muy bien los avisos; el problema del umbral de 0,5 (punto rojo) no es el modelo sino el corte, que deja por debajo `r fmt(p1$matrices$fn[1])` de las `r fmt(p1$vis_validacion)` VIS de la validación.
+:::
+
+
+```{r}
+mostrar(p1, "matrices")
+```
+
+::: {.respuesta data-latex=""}
+**Desempeño con umbral 0,5:**
+Al estimar la regresión logística y evaluarla en la validación con el umbral por defecto ($\tau = 0{,}5$), el modelo logra encontrar `r fmt(p1$matrices$vp[1])` viviendas VIS reales (Verdaderos Positivos). No obstante, este corte estadístico resulta demasiado rigido para la realidad del negocio, ya que deja escapar o no predice `r fmt(p1$matrices$fn[1])` viviendas VIS (Falsos Negativos), alcanzando una sensibilidad (Recall) de apenas el `r fmt(p1$matrices$sensibilidad[1]*100, 1)` %.
+:::
+
+## (c) El umbral con costos y la curva precision–recall
+
+```{r}
+mostrar(p1, "precision_recall")
+```
+
+::: {.respuesta data-latex=""}
+**Recomendación de política (Costos y Umbral Óptimo):**
+Desde la perspectiva de la Secretaría de Vivienda, dejar pasar una vivienda VIS (Falso Negativo) tiene un costo social mucho mayor que revisar manualmente un aviso que resultó no ser VIS (Falso Positivo). Asumiendo una relación de costos de 10 a 1 ($c_{FN} = 10, c_{FP} = 1$), se recomienda ajustar el umbral de decisión a $\tau^* \approx$ `r fmt(p1$tau_estrella, 2)`.
+
+Al implementar este umbral económico, el modelo logra identificar `r fmt(p1$matrices$vp[2])` viviendas VIS reales (aumentando la sensibilidad al `r fmt(p1$matrices$sensibilidad[2]*100, 1)` %). Para lograrlo, la secretaría deberá mandar a revisar manualmente un total de `r fmt(p1$matrices$a_revisar[2])` avisos (`r fmt(p1$matrices$porcentaje_revisar[2], 1)` % de la muestra de validación). Aunque la carga operativa aumenta, el costo total de los errores se reduce de `r fmt(p1$matrices$costo[1])` a `r fmt(p1$matrices$costo[2])`, justificando plenamente la decisión de no dejar a una familia sin subsidio de vivienda vis.
+:::
+
+
+```{r}
+mostrar(p1, "sensibilidad")
+```
+
+::: {.respuesta data-latex=""}
+**Sensibilidad al supuesto de costos:**
+El cociente de 10 a 1 es un supuesto, por eso la Tabla \ref{tab:p1-sensibilidad} repite el ejercicio con otros cocientes. Si dejar pasar una VIS costara solo el doble que revisar un aviso ($c_{FN}/c_{FP} = 2$, $\tau^* \approx 0{,}33$), la secretaría revisaría `r fmt(p1$sensibilidad$a_revisar[1])` avisos y encontraría `r fmt(p1$sensibilidad$vp[1])` VIS (recall de `r fmt(p1$sensibilidad$sensibilidad[1]*100, 1)` %). En el otro extremo, si el costo fuera 50 veces mayor ($\tau^* \approx 0{,}02$), revisaría `r fmt(p1$sensibilidad$a_revisar[5])` avisos para encontrar `r fmt(p1$sensibilidad$vp[5])` VIS (recall de `r fmt(p1$sensibilidad$sensibilidad[5]*100, 1)` %).
+
+Entre más costoso es perder una VIS, más bajo es el umbral: se encuentran más viviendas VIS, pero a cambio de revisar más avisos y con menor precision. Por tal razón, el umbral final depende de cuántos avisos puede revisar la secretaría; con nuestro supuesto de 10 a 1 el umbral queda en 0,09. Más allá de un cociente de 20 se gana muy poco: pasar de 20 a 50 encuentra solo `r fmt(p1$sensibilidad$vp[5] - p1$sensibilidad$vp[4])` VIS más, a cambio de revisar `r fmt(p1$sensibilidad$a_revisar[5] - p1$sensibilidad$a_revisar[4])` avisos adicionales.
+:::

@@ -1,0 +1,9 @@
+# R / RStudio
+.Rproj.user/
+.Rhistory
+.RData
+
+# sistema
+.DS_Store
+Thumbs.db
+desktop.ini

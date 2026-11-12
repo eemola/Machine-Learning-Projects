@@ -1,0 +1,17 @@
+---
+knit: (function(f, ...) { source(file.path(dirname(f), "formato_informe.R")); generar_pdf(solo = basename(f)) })
+---
+
+<!-- Cierre del informe. -->
+
+```{r setup-cierre, include = FALSE}
+source("formato_informe.R")
+```
+
+# Cierre
+
+**Reproducibilidad.** El informe completo sale de correr `00_run.R`, en la carpeta del proyecto: corre los análisis que lo necesiten (desde la preparación de los datos, ya incluidos en `01_data/input`), verifica sus resultados y arma este documento a partir de ellos; ninguna cifra se copia a mano. Rutas relativas a la carpeta del proyecto; semilla de la validación: 12345. Versión: `r R.version.string`; paquetes: `r paste(sapply(c("rio", "dplyr", "glmnet", "ggplot2", "rmarkdown"), function(p) paste(p, packageVersion(p))), collapse = ", ")`.
+
+::: {.respuesta data-latex=""}
+**Uso de inteligencia artificial.** Se usó Claude (Anthropic) para diseñar el formato del informe, automatizar su generación a partir de los resultados y organizar la ejecución completa en `00_run.R`, así como para reorganizar este trabajo como un proyecto independiente. Las interpretaciones y conclusiones son del autor.
+:::

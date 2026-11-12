@@ -1,0 +1,41 @@
+---
+knit: (function(f, ...) { source(file.path(dirname(f), "formato_informe.R")); generar_pdf(solo = basename(f)) })
+---
+
+<!-- Parte 2: el modelo final de VIS. Resultados: 04_final_model/output/results_part_2.rds -->
+
+```{r setup-p2, include = FALSE}
+source("formato_informe.R")
+p2 <- resultados(2)
+```
+
+# 2. El modelo final de VIS
+
+```{r}
+estado(p2)
+```
+
+```{r}
+mostrar(p2, "anexo_vis")
+```
+
+::: {.respuesta data-latex=""}
+**Elección del modelo final de VIS:**
+Para escoger el modelo final comparamos seis modelos con validación cruzada de cinco pliegues espaciales, celdas de 0,02 grados de lado (Tabla \ref{tab:p2-anexo_vis}). En todos el estrato entra como factor, igual que en la Parte 1. Todos superan con amplitud a la referencia sin predictores (V0), que tiene un AUC de 0,5 y un log-loss de `r fmt(p2$referencia_vis[["logloss"]], 4)`.
+
+   - **Logísticas (V1 a V3):** el AUC es de `r fmt(p2$tabla_vis$auc_espacial[1], 4)` con tipo, área, baños y estrato (V1), de `r fmt(p2$tabla_vis$auc_espacial[2], 4)` al agregar coordenadas y año (V2) y de `r fmt(p2$tabla_vis$auc_espacial[3], 4)` al sumar las distancias que calculamos (V3).
+
+   - **Penalizados (V4 a V6):** Lasso, Ridge y Elastic Net obtienen un AUC entre `r fmt(min(p2$tabla_vis$auc_espacial[4:6]), 4)` y `r fmt(max(p2$tabla_vis$auc_espacial[4:6]), 4)`, con un log-loss entre `r fmt(min(p2$tabla_vis$logloss_espacial[4:6]), 4)` y `r fmt(max(p2$tabla_vis$logloss_espacial[4:6]), 4)`.
+
+**Modelo final:** escogimos el de mayor AUC con pliegues espaciales, `r p2$modelo_vis`. Lo reajustamos con los 15.277 avisos del entrenamiento y con él predecimos `prob_vis` para los 3.819 avisos de prueba.
+:::
+
+
+```{r}
+mostrar(p2, "esquemas_vis")
+```
+
+::: {.respuesta data-latex=""}
+**Pliegues aleatorios frente a espaciales:**
+La Tabla \ref{tab:p2-esquemas_vis} compara el AUC de cada modelo con los dos esquemas de validación. Con pliegues espaciales el modelo debe clasificar avisos de zonas de la ciudad que no vio al ajustarse: por ejemplo, V2 pasa de `r fmt(p2$tabla_vis$auc_azar[2], 4)` con pliegues aleatorios a `r fmt(p2$tabla_vis$auc_espacial[2], 4)` con pliegues espaciales, y el Ridge de `r fmt(p2$tabla_vis$auc_azar[5], 4)` a `r fmt(p2$tabla_vis$auc_espacial[5], 4)`. Por eso, para identificar VIS en zonas nuevas, escogemos el modelo con pliegues espaciales: es la validación que mejor refleja el reto de identificar VIS en zonas nuevas.
+:::

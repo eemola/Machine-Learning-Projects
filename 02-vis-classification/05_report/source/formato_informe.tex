@@ -1,0 +1,72 @@
+% ============================================================================ %
+% LaTeX format of the report (informe_general.Rmd). Text font: Palatino (newpx)
+% ============================================================================ %
+
+% ---- Text and math in Palatino (newpx); if a computer does not have it, the
+%      report keeps the default LaTeX font instead of stopping
+\IfFileExists{newpxtext.sty}{\usepackage{newpxtext}\usepackage{newpxmath}}{}
+
+% ---- Greek letters and symbols written directly in table titles and notes
+%      (pdflatex does not know them: λ mín, α = 0,5, Coef. ≠ 0, ± un error estándar)
+\DeclareUnicodeCharacter{03BB}{\ensuremath{\lambda}}
+\DeclareUnicodeCharacter{03B1}{\ensuremath{\alpha}}
+\DeclareUnicodeCharacter{2260}{\ensuremath{\neq}}
+\DeclareUnicodeCharacter{00B1}{\ensuremath{\pm}}
+\DeclareUnicodeCharacter{03C4}{\ensuremath{\tau}}
+
+% ---- Colors (the blue of the headings)
+\definecolor{azul}{HTML}{1F497D}
+
+% ---- Headings: parts in blue, literals in bold, no numbers
+\usepackage{titlesec}
+\titleformat{\section}{\color{azul}\Large\bfseries}{}{0pt}{}
+\titleformat{\subsection}{\large\bfseries}{}{0pt}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\itshape}{}{0pt}{}
+\titlespacing*{\section}{0pt}{1.6em plus 0.4em}{0.7em}
+\titlespacing*{\subsection}{0pt}{1.1em plus 0.3em}{0.4em}
+\titlespacing*{\subsubsection}{0pt}{0.8em}{0.3em}
+
+% ---- Captions: small text, label in blue; tables have the caption on top
+\usepackage{caption}
+\captionsetup{font=small, labelfont={bf,color=azul}, labelsep=period,
+              justification=justified, singlelinecheck=true, margin=0.4cm}
+\captionsetup[table]{skip=5pt}
+\captionsetup[figure]{skip=4pt}
+\addto\captionsspanish{\renewcommand{\tablename}{Tabla}}
+% Spanish babel adds a space before \%; "(%)" in table headers reads better without it
+\AtBeginDocument{\ifdefined\spanishplainpercent\spanishplainpercent\fi}
+
+% ---- Floats stay where they are written (fig.pos = "H")
+\usepackage{float}
+\setlength{\intextsep}{10pt plus 2pt minus 2pt}
+
+% ---- Tables: a bit more air between rows
+\renewcommand{\arraystretch}{1.12}
+
+% ---- Header and footer
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize\color{gray}Vivienda de interés social (VIS) en Cali \textperiodcentered{} Proyecto de machine learning}
+\fancyhead[R]{\footnotesize\color{gray}Mola}
+\fancyfoot[C]{\footnotesize\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{gray!40}\leaders\hrule height \headrulewidth\hfill}}
+\setlength{\headheight}{22pt}
+\addtolength{\topmargin}{-8pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\footnotesize\thepage}\renewcommand{\headrulewidth}{0pt}}
+
+% ---- Boxes: the first line with the final model, and the team's answers
+%      (in the .Rmd: the text between ::: {.respuesta data-latex=""} and :::)
+\usepackage[most]{tcolorbox}
+\newtcolorbox{resultado}{enhanced, breakable, colback=azul!6, colframe=azul,
+  boxrule=0pt, leftrule=3pt, arc=0pt, outer arc=0pt,
+  left=8pt, right=8pt, top=5pt, bottom=5pt, before skip=8pt, after skip=10pt}
+\newtcolorbox{respuesta}{enhanced, breakable, colback=gray!5, colframe=azul!70,
+  boxrule=0pt, leftrule=2.5pt, arc=0pt, outer arc=0pt,
+  left=10pt, right=10pt, top=6pt, bottom=6pt, before skip=6pt, after skip=10pt}
+
+% ---- PDF metadata (the title block is written by the report itself)
+\AtBeginDocument{\hypersetup{
+  pdftitle={¿Qué avisos son vivienda de interés social (VIS) en Cali?},
+  pdfauthor={Elkin Mola}}}

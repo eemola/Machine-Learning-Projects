@@ -1,0 +1,39 @@
+# R / RStudio
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+Rplots.pdf
+
+# archivos temporales de knit / LaTeX
+06_report/source/*_files/
+06_report/source/*.log
+06_report/source/*.tex
+!06_report/source/formato_informe.tex
+*.aux
+*.synctex.gz
+
+# lo que cada etapa genera: se regenera con 00_run.R (los .gitkeep conservan las carpetas)
+01_data/output/*
+!01_data/output/.gitkeep
+02_features/input/vivienda_cali.csv
+02_features/output/*
+!02_features/output/.gitkeep
+0[3-4]_*/input/*
+!0[3-4]_*/input/.gitkeep
+0[3-4]_*/output/*
+!0[3-4]_*/output/.gitkeep
+05_final_model/input/*
+!05_final_model/input/.gitkeep
+05_final_model/output/*
+!05_final_model/output/.gitkeep
+06_report/input/*
+!06_report/input/.gitkeep
+
+# registros de 00_run.R (se regeneran); el PDF del informe si se conserva
+06_report/output/logs/
+
+# sistema
+desktop.ini
+.DS_Store
+Thumbs.db

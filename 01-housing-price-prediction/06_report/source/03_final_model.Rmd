@@ -1,0 +1,74 @@
+---
+knit: (function(f, ...) { source(file.path(dirname(f), "formato_informe.R")); generar_pdf(solo = basename(f)) })
+---
+
+<!-- Parte 3: el modelo final del precio. Resultados: 05_final_model/output/results_part_3.rds -->
+
+```{r setup-p3, include = FALSE}
+source("formato_informe.R")
+p3 <- resultados(3)
+
+## cifras para el texto (salen del .rds; nada se copia a mano)
+if (is.null(attr(p3 , "pendiente"))){
+   cand <- p3$candidatos
+   rmse_m0 <- cand$rmse[startsWith(cand$modelo , "M0")]
+   rmse_e4 <- cand$rmse[startsWith(cand$modelo , "E4.")]
+   plg <- p3$elementos$candidatos_pliegues$datos
+   plg_final <- unlist(plg[plg$modelo == p3$final , -1])
+   plg_e4 <- unlist(plg[plg$modelo == "E4 (Parte 2)" , -1])
+   prec <- p3$elementos$final_precios$datos
+}
+```
+
+# 3. El modelo final y las predicciones
+
+```{r}
+estado(p3)
+```
+
+## (a) Modelo final del precio
+
+```{r}
+mostrar(p3, "candidatos")
+```
+
+::: {.respuesta data-latex=""}
+**Elección del modelo final del precio:**
+La Tabla \ref{tab:p3-candidatos} reúne todos los modelos de la Parte 2 y dos mejoras, todos con los mismos cinco pliegues espaciales. El mejor de la Parte 2 era E4 (RMSE de `r fmt(rmse_e4, 2)` millones). Sobre E4 probamos dos mejoras: modelar el logaritmo del precio, que acorta su cola larga a la derecha, y agregar estrato $\times$ área, porque el metro cuadrado no vale lo mismo en todos los estratos.
+
+El de menor error es **`r p3$final`**, con un RMSE de `r fmt(p3$rmse_final, 2)` millones, un MAE de `r fmt(p3$anexo$mae, 2)` y un R² de `r fmt(p3$anexo$r2, 3)`: `r fmt((1 - p3$rmse_final/rmse_m0)*100, 1)` % menos error que predecir con la media ($M_0$). Aunque el modelo se estima en logaritmos, cada predicción se devuelve a millones con $\exp()$ y el factor de Duan, y el RMSE, el MAE y el R² se calculan sobre el precio original en millones, para que sean comparables con los demás modelos. Por eso esta fila es comparable con todas las de la tabla de modelos.
+:::
+
+```{r}
+mostrar(p3, "candidatos_pliegues")
+```
+
+::: {.respuesta data-latex=""}
+**Error por pliegue:** La Tabla \ref{tab:p3-candidatos_pliegues} muestra que el error depende mucho de la zona: con el modelo final va de `r fmt(min(plg_final), 1)` a `r fmt(max(plg_final), 1)` millones según el pliegue. El modelo final tiene menor RMSE que E4 en `r sum(plg_final < plg_e4)` de los 5 pliegues, así que la mejora no depende de una sola zona de la ciudad.
+:::
+
+```{r}
+mostrar(p3, "final_figura")
+```
+
+::: {.respuesta data-latex=""}
+**El modelo final en la validación y en la prueba:** En el Panel A de la Figura \ref{fig:p3-final_figura}, los puntos se agrupan cerca de la línea de 45° en los precios bajos y medios, y se dispersan más en las viviendas caras, donde el modelo comete los errores más grandes. En el Panel B, el precio predicho para la prueba tiene una forma parecida a la del precio observado en el entrenamiento.
+:::
+
+```{r}
+mostrar(p3, "final_precios")
+```
+
+::: {.respuesta data-latex=""}
+**Precios observados y predichos:** La Tabla \ref{tab:p3-final_precios} muestra que el modelo reproduce bien el centro de la distribución: en la prueba, la mediana predicha es de `r fmt(prec$prueba[3], 1)` millones (frente a `r fmt(prec$observado[3], 1)` observada en el entrenamiento) y la media de `r fmt(prec$prueba[4], 1)` (frente a `r fmt(prec$observado[4], 1)`). En los extremos es más prudente: el máximo predicho es `r fmt(prec$prueba[6], 1)` millones, frente a `r fmt(prec$observado[6], 1)` observado.
+:::
+
+## (b) Para la avaluadora
+
+::: {.respuesta data-latex=""}
+Con lo que dice un aviso se puede tasar una vivienda en Cali con un error típico (RMSE) de unos `r fmt(p3$rmse_final, 0)` millones de pesos y un error absoluto medio de `r fmt(p3$anexo$mae, 0)` millones; el modelo explica cerca del `r fmt(p3$anexo$r2*100, 0)` % de la variación del precio. Sirve como primer avalúo, no como avalúo final.
+
+El avalúo automático fallará más en las viviendas caras, donde los errores son mayores, y en las zonas con pocos avisos o muy distintas al resto, como muestran los pliegues espaciales. El aviso no dice el estado del inmueble, los acabados, el piso ni la vista, y eso pesa más en el segmento alto.
+
+Lo que el modelo no dice: sus coeficientes y las variables que selecciona no son efectos causales. El modelo aprende asociaciones; por ejemplo, la distancia a un centro comercial también resume el barrio, el estrato y el ingreso de la zona, así que no dice cuánto subiría el precio si se construyera uno al lado. Sirve para predecir, no para responder qué pasaría si cambiara una característica de la vivienda.
+:::
